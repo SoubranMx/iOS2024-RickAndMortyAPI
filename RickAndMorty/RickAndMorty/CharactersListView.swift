@@ -17,6 +17,10 @@ class CharactersListVM: ObservableObject {
     private var cancelableSet: Set<AnyCancellable> = []
 
     init() {
+        loadClient()
+    }
+    
+    func loadClient() {
         client
             .showPublisher(path: "/api/character", page: currentPage)
             .receive(on: RunLoop.main)
@@ -25,18 +29,20 @@ class CharactersListVM: ObservableObject {
             } receiveValue: { response in
                 let results = response?.results ?? []
                 self.characters.append(contentsOf: results)
+                debugPrint("new records => ", self.characters)
             }
             .store(in: &cancelableSet)
     }
 
     func loadNextPage() {
         currentPage += 1
-        print("It should load with combine")
+        print("It should load with combine, page \(currentPage)")
+        loadClient()
     }
 }
 
 struct CharactersListView: View {
-    let vm = CharactersListVM()
+    @ObservedObject var vm = CharactersListVM()
 
     var body: some View {
         NavigationView {
@@ -45,6 +51,7 @@ struct CharactersListView: View {
                     .onAppear {
                         if character == vm.characters.last {
                             vm.loadNextPage()
+                            
                         }
                     }
             }
